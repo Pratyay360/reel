@@ -51,6 +51,7 @@ body{background:var(--bg);color:var(--fg);display:flex;flex-direction:column;ali
 .sv small{font-size:22px;opacity:.55;letter-spacing:.08em;display:block}
 .sv b{display:block;font-size:50px;letter-spacing:-.03em;margin-top:18px;line-height:1}
 .sv i{position:absolute;right:18px;bottom:-14px;font-size:150px;color:var(--coral);font-style:normal;line-height:1}
+#ctl #snd{width:auto;padding:0 18px;font-size:15px;white-space:nowrap;background:var(--lime);color:#0b0b10}
 </style></head><body>
 <div id="wrap"><div id="stage">
 
@@ -102,7 +103,11 @@ body{background:var(--bg);color:var(--fg);display:flex;flex-direction:column;ali
 <div id="fl"></div><div id="vig"></div>
 <div id="hud"><div style="left:48px;top:40px">NEWSY ✦ MOTION REEL</div><div id="tc" style="right:48px;bottom:40px">00:00:00</div></div>
 </div></div>
-<div id="ctl"><button id="pb">❚❚</button><div id="bar"><div id="fill"></div></div></div>
+<div id="ctl"><button id="pb">❚❚</button>
+    <button id="snd">🔊
+        Sound on
+    </button>
+    <div id="bar"><div id="fill"></div></div></div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script>
@@ -124,7 +129,7 @@ d.innerHTML='<small>posts/'+t.toLowerCase().replace(/ /g,'-')+'.md</small><b>'+t
 'newsy'.split('').forEach(c=>{const s=document.createElement('span');s.innerHTML='<b>'+c+'</b>';$('#wm').appendChild(s)});
 for(let i=0;i<4;i++){const r=document.createElement('div');r.className='rg';$('#rgs').appendChild(r)}
 
-const tl=gsap.timeline({paused:true,onUpdate:upd,onComplete:()=>{$('#pb').textContent='↻'}});
+const tl=gsap.timeline({paused:true,onUpdate:upd,onComplete:()=>{$('#pb').textContent='↻';stopA()}});
 const wipe=(s,t,f)=>tl.fromTo(s,{clipPath:f},{clipPath:'inset(0% 0% 0% 0%)',duration:.55,ease:'power4.inOut'},t);
 
 /* S1 0–2.5 the pain */
@@ -181,11 +186,56 @@ tl.from('#cred',{opacity:0,y:20,duration:.6},D+2.6);tl.to({},{duration:.01},14.9
 
 function upd(){const t=tl.time();$('#fill').style.width=t/15*100+'%';
 const p=n=>String(n).padStart(2,'0');$('#tc').textContent='00:'+p(Math.floor(t))+':'+p(Math.floor((t%1)*30))}
-$('#pb').onclick=()=>{if(tl.progress()>=1){tl.restart();$('#pb').textContent='❚❚'}else if(tl.paused()){tl.play();$('#pb').textContent='❚❚'}else{tl.pause();$('#pb').textContent='▶'}};
-$('#bar').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();tl.progress((e.clientX-r.left)/r.width)};
-const booted=new Promise(r=>Promise.race([document.fonts.ready,new Promise(x=>setTimeout(x,1500))]).then(()=>r()));
-booted.then(()=>{if(!window.__reel)tl.play(0)});
+$('#pb').onclick=()=>{if(tl.progress()>=1){tl.restart();$('#pb').textContent='❚❚'}else if(tl.paused()){tl.play();$('#pb').textContent='❚❚'}else{tl.pause();$('#pb').textContent='▶'}syncAudio()};
+$('#bar').onclick=e=>{const r=e.currentTarget.getBoundingClientRect();tl.progress((e.clientX-r.left)/r.width);syncAudio()};
 
+let AC,buf,src,mixing;
+function stopA(){try{src&&src.stop()}catch(e){}src=null}
+function audioStatus(){$('#snd').textContent=AC.state==='running'?'🔊 Sound on':'🔊 Click to enable sound'}
+function syncAudio(){stopA();if(!buf||AC.state!=='running'||tl.paused()||tl.progress()>=1)return;
+ src=AC.createBufferSource();src.buffer=buf;src.connect(AC.destination);src.start(0,Math.min(tl.time(),14.9))}
+async function enableAudio(){try{
+ if(!AC){AC=new(window.AudioContext||window.webkitAudioContext)();AC.onstatechange=()=>{if(buf){audioStatus();syncAudio()}}}
+ // Autoplay may be blocked until a user gesture; keep sound enabled and retry then.
+ if(AC.state==='suspended')AC.resume().catch(()=>{if(buf)audioStatus()});
+ if(!buf){$('#snd').textContent='… mixing';buf=await(mixing||(mixing=build()))}
+ audioStatus();syncAudio()
+ }catch(e){mixing=null;$('#snd').textContent='🔇 Unavailable'}}
+$('#snd').onclick=enableAudio;
+const unlockAudio=()=>{if(!AC||AC.state==='suspended')enableAudio()};
+addEventListener('pointerdown',unlockAudio);addEventListener('keydown',unlockAudio);
+async function build(){
+ const sr=44100,oc=new OfflineAudioContext(2,sr*15,sr),m=oc.createGain();
+ m.gain.setValueAtTime(.5,0);m.gain.setValueAtTime(.5,14.2);m.gain.linearRampToValueAtTime(0,15);m.connect(oc.destination);
+ const nb=oc.createBuffer(1,sr*2,sr),nd=nb.getChannelData(0);for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
+ const env=(t,d,v)=>{const g=oc.createGain();g.gain.setValueAtTime(.0001,t);g.gain.linearRampToValueAtTime(v,t+.006);g.gain.exponentialRampToValueAtTime(.0001,t+d);g.connect(m);return g};
+ const osc=(ty,f,t,d,v,fe)=>{const o=oc.createOscillator();o.type=ty;o.frequency.setValueAtTime(f,t);if(fe)o.frequency.exponentialRampToValueAtTime(fe,t+d);o.connect(env(t,d,v));o.start(t);o.stop(t+d+.05)};
+ const nz=(t,d,v,f,ty)=>{const s=oc.createBufferSource(),fl=oc.createBiquadFilter();s.buffer=nb;fl.type=ty||'highpass';fl.frequency.value=f;s.connect(fl);fl.connect(env(t,d,v));s.start(t);s.stop(t+d)};
+ const rise=(t0,t1,f0,f1,v)=>{const o=oc.createOscillator(),g=oc.createGain();o.type='sawtooth';o.frequency.setValueAtTime(f0,t0);o.frequency.exponentialRampToValueAtTime(f1,t1);g.gain.setValueAtTime(.0001,t0);g.gain.linearRampToValueAtTime(v,t1);g.gain.linearRampToValueAtTime(0,t1+.05);o.connect(g);g.connect(m);o.start(t0);o.stop(t1+.1)};
+ const N=n=>440*Math.pow(2,(n-69)/12),kick=t=>osc('sine',150,t,.3,1,45),hat=(t,v)=>nz(t,.04,v,7500),
+  snare=t=>{nz(t,.16,.5,1800);osc('triangle',230,t,.1,.3,130)},bass=(n,t,d)=>osc('sawtooth',N(n),t,d,.26),
+  lead=(n,t,d,v)=>{osc('square',N(n),t,d,v);osc('sawtooth',N(n)*1.006,t,d,v*.7)},
+  chime=(n,t)=>{osc('sine',N(n),t,1.2,.25);osc('sine',N(n)*2,t,.8,.1)};
+ const B=60/128,roots=[45,41,48,43];let t,k,d;
+ // 0–2.4 tension: drone, accelerating ticks, riser, impact
+ osc('sawtooth',55,0,2.4,.22);rise(.2,2.4,80,1800,.14);
+ t=.1;d=.4;while(t<2.3){hat(t,.4);t+=d;d=Math.max(.07,d*.82)}
+ kick(2.4);nz(2.4,1.3,.7,2500);osc('sine',60,2.4,1.2,1,28);
+ [2.45,5,8.75,11.6].forEach(x=>nz(x-.05,.6,.35,2500));
+ // 2.5–5 word hits
+ for(t=2.5,k=0;t<5;t+=B/2,k++){if(k%2==0)kick(t);else hat(t,.25);bass(roots[0],t,B*.4)}
+ [2.95,3.75,4.55].forEach(x=>{snare(x);[57,64,69].forEach(n=>lead(n,x,.3,.12))});
+ // 5–14.3 groove
+ for(t=5,k=0;t<14.3;t+=B/2,k++){const r=roots[Math.floor((t-5)/(4*B))%4];
+  if(k%2==0)kick(t);else hat(t,.22);if(k%4==2&&t<10.9)snare(t);bass(r,t,B*.42);lead(r+24+[0,7,12,7][k%4],t,B*.4,.09)}
+ // 8.75–11.6 build
+ rise(8.75,11.55,120,2400,.12);for(t=9.9;t<11.55;t+=B/4)hat(t,.15);
+ for(t=10.9,d=.2;t<11.55;t+=d,d*=.85)snare(t);
+ // 11.6 logo drop
+ kick(11.6);nz(11.6,1.5,.7,2500);osc('sine',60,11.6,1.2,1,28);[57,64,69,72].forEach(n=>lead(n,11.6,2.2,.1));
+ chime(93,12.05);chime(96,12.6);chime(88,13.65);
+ return oc.startRendering()}
 window.__reel={tl,booted,DUR:tl.duration(),rebuild(){},seekTo(t){tl.pause();tl.time(t)}};
-
+enableAudio();
+Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1500))]).then(()=>{tl.play(0);syncAudio()});
 </script></body></html>
