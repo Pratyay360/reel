@@ -1,0 +1,17 @@
+[tools]
+ffmpeg = "latest"
+node = "24"
+"npm:@playwright/cli" = "latest"
+playwright = "latest"
+pnpm = "latest"
+
+[deps]
+node = { auto = true }
+
+[tasks]
+capture = """
+pnpm install
+pnpx playwright install
+pnpx @playwright/cli install
+pnpm run capture
+"""
