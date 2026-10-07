@@ -65,9 +65,8 @@ Mono: https://scripts.sil.org/OFL
 <body>
 <canvas id="reel" role="img" aria-label="Drawy motion reel — ideas don't sit still. One drawing core: DrawX offline, Drawy connected, DrawyParty multiplayer."></canvas>
 <p class="sr-only">A silent 37 second motion study for the Drawy family. One drawing core, three ways to run it: DrawX offline on the desktop, Drawy connected through Supabase, DrawyParty multiplayer through PartyKit.</p>
-<script>// The reel is a single canvas painting a ten-chapter motion study. Everything
-// below the engine is drawn in a fixed 1920x1080 frame and letterboxed into
-// whatever viewport it lands in, so the composition never breaks.
+<script>
+window.__reel={tl,booted,DUR:tl.duration(),rebuild(){},seekTo(t){tl.pause();tl.time(t)}};
 window.Motion = (() => {
 	const canvas = document.getElementById("reel");
 	const ctx = canvas.getContext("2d", { alpha: false });
