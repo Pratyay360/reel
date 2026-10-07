@@ -23,11 +23,9 @@ const OUT = path.join(__dirname, 'video.mp4');
   await page.goto('file://' + path.join(__dirname, FILE),
                   { waitUntil: 'networkidle', timeout: 60000 });
 
-  await page.waitForFunction(() => window.__reel && !document.getElementById('boot'),
-                             null, { timeout: 60000 });
-
-  await page.evaluate(() => document.fonts.ready.then(() => true));
-  await page.evaluate(() => window.__reel.rebuild());
+  await page.waitForFunction(() => !!window.DrawyReel, null, { timeout: 60000 });
+  await page.evaluate(() => window.DrawyReel.ready);
+  await page.evaluate(() => window.DrawyReel.pause());
 
 
   await page.addStyleTag({ content: `
@@ -37,12 +35,12 @@ const OUT = path.join(__dirname, 'video.mp4');
     *,*::before,*::after{animation:none!important;transition:none!important;caret-color:transparent!important}
   `});
 
-  const DUR   = await page.evaluate(() => window.__reel.DUR);
+  const DUR   = await page.evaluate(() => window.DrawyReel.duration);
   const total = Math.ceil(DUR * FPS);
   console.log(`rendering ${total} frames @ ${FPS} fps...`);
 
   for (let f = 0; f < total; f++) {
-    await page.evaluate(t => window.__reel.seekTo(t), f / FPS);
+    await page.evaluate(t => window.DrawyReel.seek(t), f / FPS);
     await page.screenshot({ path: path.join(frames, 'f' + String(f).padStart(5, '0') + '.png') });
     if (f % 90 === 0) console.log(`  ${f} / ${total}`);
   }
