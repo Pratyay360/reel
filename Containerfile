@@ -1,4 +1,4 @@
-FROM ghcr.io/jdx/mise:2026.8.16
+FROM ghcr.io/jdx/mise:2026.10.4
 
 WORKDIR /app
 COPY . .
