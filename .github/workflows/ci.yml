@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@main
-      - uses: jdx/mise-action@v3
+      - uses: jdx/mise-action@v5
       - name: Build video
         run: |
           mise trust
