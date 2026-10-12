@@ -1035,8 +1035,13 @@ function start(){
   document.body.classList.remove('paused');
 }
 document.body.classList.add('paused');
+window.__reel={
+  DUR,
+  rebuild(){ fit(); codeBodyH=codeBody.clientHeight-2; buildIV(); },
+  seekTo(t){ setPlaying(false,true); seek(t); render(T.t,T.prev); }
+};
+
 Promise.race([document.fonts.ready,new Promise(r=>setTimeout(r,1800))]).then(start);
 </script>
 </body>
 </html>
-

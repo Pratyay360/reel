@@ -9,7 +9,12 @@ make a repo by copying the template.
 You must add this code snippet to the `<script> </script>` block
 
 ```js
-window.__reel={tl,booted,DUR:tl.duration(),rebuild(){},seekTo(t){tl.pause();tl.time(t)}};
+window.__reel={
+  DUR,
+  rebuild(){ fit(); codeBodyH=codeBody.clientHeight-2; buildIV(); },
+  seekTo(t){ setPlaying(false,true); seek(t); render(T.t,T.prev); }
+};
+
 ```
 
 Create a motion reel with your favorite llm 

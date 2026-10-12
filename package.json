@@ -7,8 +7,8 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "capture": "node capture.js",
-    "test": "node capture.js"
+    "capture": "pnpm exec node capture.js",
+    "test": "pnpm exec node capture.js"
   },
   "dependencies": {
     "@ffmpeg-installer/ffmpeg": "^1.1.0",
