@@ -21,10 +21,10 @@ const OUT = path.join(__dirname, 'video.mp4');
   const page = await context.newPage();
 
   await page.goto('file://' + path.join(__dirname, FILE),
-                  { waitUntil: 'networkidle', timeout: 60000 });
+                  { waitUntil: 'networkidle', timeout: 1200000 });
 
   await page.waitForFunction(() => window.__reel && !document.getElementById('boot'),
-                             null, { timeout: 60000 });
+                             null, { timeout: 1200000 });
 
   await page.evaluate(() => document.fonts.ready.then(() => true));
   await page.evaluate(() => window.__reel.rebuild());
