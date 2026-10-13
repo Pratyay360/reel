@@ -23,7 +23,7 @@ jobs:
           mise deps
           mise run capture
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
 
       - name: Publish video
         uses: softprops/action-gh-release@v2
@@ -31,4 +31,4 @@ jobs:
           tag_name: ${{ github.ref_type == 'tag' && github.ref_name || format('v{0}.{1}', github.run_number, github.run_attempt) }}
           files: video.mp4
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ github.token }}
